@@ -2,19 +2,19 @@ const rateLimit = require('express-rate-limit');
 const RedisStoreImport = require('rate-limit-redis');
 const { createClient } = require('redis');
 
-// For compatibility with latest redis
+// ✅ Use environment variable
 const redisClient = createClient({
   legacyMode: true,
-  url: 'redis://localhost:6379',
+  url: process.env.REDIS_URL,
 });
 
 redisClient.connect().catch(console.error);
 
-// Handle default export
+// Handle ESM default export if needed
 const RedisStore = RedisStoreImport.default || RedisStoreImport;
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
