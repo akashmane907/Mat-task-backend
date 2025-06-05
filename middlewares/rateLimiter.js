@@ -2,25 +2,29 @@ const rateLimit = require('express-rate-limit');
 const RedisStoreImport = require('rate-limit-redis');
 const { createClient } = require('redis');
 
-// Create Redis client (Upstash-compatible)
+// Create Redis client for Upstash (TLS and cloud-friendly)
 const redisClient = createClient({
   url: process.env.REDIS_URL,
+  socket: {
+    tls: true,
+    rejectUnauthorized: false, // Optional but useful for Render + Upstash
+  },
 });
 
 redisClient.connect().catch((err) => {
   console.error("❌ Redis connection failed:", err);
 });
 
-// Handle both CommonJS and ESM versions of Redis Store
+// Support ESM/CJS
 const RedisStore = RedisStoreImport.default || RedisStoreImport;
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
+    client: redisClient, // ✅ correct for Upstash
   }),
 });
 
